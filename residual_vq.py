@@ -1,9 +1,15 @@
 import random
+import logging
+# Create a logger for each module
+logger = logging.getLogger(__name__)
+
+
 from typing import Tuple, List, Optional
 
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn import init
 
 class ResidualVectorQuantizer(nn.Module):
@@ -45,20 +51,28 @@ class ResidualVectorQuantizer(nn.Module):
             n = random.randrange(1, self.num_quantizers)
         else:
             n = self.num_quantizers
+        # logger.debug(n)
         codes = []
         r = input.type_as(self.running_mean).detach()
+        logger.debug("r %s", r.shape)
+        logger.debug("input %s", input.shape)
         with torch.no_grad():
+
             for i in range(n):
                 w = self.weight[i]
                 # r: [..., num_embeddings]
                 dist = torch.cdist(r, w)
+                logger.debug("dist %s", dist.shape)
                 k = torch.argmin(dist, axis=-1)
+                logger.debug("k %s", k.shape)
                 codes.append(k)
                 self._update_averages(i, r, k)
                 r = r - F.embedding(k, w)
         quantized = input - r
         commitment_loss = torch.mean(torch.square(input - quantized.detach()))
         self.weight.data[:] = self.running_mean / torch.unsqueeze(self.eps + self.code_count, axis=-1)
+
+        logger.debug("ndim %s", input.ndim)
         return quantized, torch.stack(codes, input.ndim - 1), commitment_loss
 
     def dequantize(self, input: torch.Tensor, n: Optional[int] = None) -> torch.Tensor:
@@ -80,13 +94,23 @@ class ResidualVectorQuantizer(nn.Module):
         # 2.1 Vector Quantized Variational AutoEncode
 
         # k: [...]
-        one_hot_k = F.one_hot(torch.flatten(k), self.num_embeddings).type_as(self.code_count)
+        flat = torch.flatten(k)
+        logger.debug("flat %s", flat.shape)
+        one_hot_k = F.one_hot(flat, self.num_embeddings).type_as(self.code_count)
+        logger.debug("one_hot_k %s", one_hot_k.shape)
+        
         code_count_update = torch.mean(one_hot_k, axis=0)
+        logger.debug("code_count_update %s", code_count_update.shape)
+        # logger.debug(code_count_update)
         self.code_count[i].lerp_(code_count_update, 1 - self.decay)
-
+        logger.debug("self.code_count[i] %s", self.code_count[i].shape)
         # r: [..., embedding_dim]
+        logger.debug("r before reshape %s", r.shape)
         r = r.reshape(-1, self.embedding_dim)
+        logger.debug("r after reshape %s", r.shape)
+                            #       128* 64000 @ 64000* 512 / 64000
         running_mean_update = (one_hot_k.T @ r) / r.shape[0]
+        logger.debug("running_mean_update %s" , running_mean_update.shape)
         self.running_mean[i].lerp_(running_mean_update, 1 - self.decay)
 
     @torch.no_grad()
