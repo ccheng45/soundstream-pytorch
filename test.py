@@ -40,9 +40,9 @@ import torchaudio
 #         x = torch.squeeze(x, 1)
 #         return x
     
-model = StreamableModel.load_from_checkpoint("results/last.ckpt")
+model = StreamableModel.load_from_checkpoint("results/epoch=0-step=200.ckpt")
 model.eval()
-x, sr = torchaudio.load('temp/input_audio_0.wav')
+x, sr = torchaudio.load('temp/input.flac')
 x, sr = torchaudio.functional.resample(x, sr, 16000), 16000
 with torch.no_grad():
     print("x", x.shape)

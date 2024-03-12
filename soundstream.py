@@ -651,12 +651,16 @@ class KMeanCodebookInitCallback(pl.Callback):
 
 def train():
     wandb_logger = WandbLogger(project="soundstream-pytorch")
-    model = StreamableModel(
-        batch_size=32,
-        sample_rate=16_000,
-        segment_length=32270,
-        padding='same',
-        dataset='librispeech')
+    # model = StreamableModel(
+    #     batch_size=32,
+    #     sample_rate=16_000,
+    #     segment_length=32270,
+    #     padding='same',
+    #     dataset='librispeech')
+    new_learning_rate = 1e-5
+
+    model = StreamableModel.load_from_checkpoint("results/last.ckpt", lr=new_learning_rate, batch_size=4)
+   
     trainer = pl.Trainer(
         max_epochs=10000,
         log_every_n_steps=2,
@@ -666,12 +670,14 @@ def train():
         # logger=pl.loggers.TensorBoardLogger("lightning_logs", name="soundstream"),
         callbacks=[
             pl.callbacks.ModelCheckpoint(
-                dirpath='/content/drive/MyDrive/soundstream_pytorch/', 
-                every_n_train_steps=1000,
+                # dirpath='/content/drive/MyDrive/soundstream_pytorch/', 
+                dirpath='./results',
+                every_n_train_steps=100,
             ),
             KMeanCodebookInitCallback(),
         ],
     )
+
     trainer.fit(
         model,
     )
