@@ -163,3 +163,5 @@ cython_debug/
 /output
 /lightning_logs
 /temp
+/wandb
+/results

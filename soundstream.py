@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
+from pytorch_lightning.loggers import WandbLogger
 try:
     import pytorch_lightning as pl
 except ImportError:
@@ -620,7 +621,7 @@ class StreamableModel(pl.LightningModule):
             ds = torchaudio.datasets.LIBRISPEECH("./data", url="dev-clean")
         elif self.hparams.dataset == 'librispeech':
             url = "train-clean-100" if train else "dev-clean"
-            ds = torchaudio.datasets.LIBRISPEECH("./data", url=url)
+            ds = torchaudio.datasets.LIBRISPEECH("./data", url=url, download=True)
         else:
             raise ValueError()
         ds = VoiceDataset(ds, self.hparams.sample_rate, self.hparams.segment_length)
@@ -649,6 +650,7 @@ class KMeanCodebookInitCallback(pl.Callback):
 
 
 def train():
+    wandb_logger = WandbLogger(project="soundstream-pytorch")
     model = StreamableModel(
         batch_size=32,
         sample_rate=16_000,
@@ -659,10 +661,14 @@ def train():
         max_epochs=10000,
         log_every_n_steps=2,
         precision='16-mixed',
-        logger=pl.loggers.CSVLogger("."),
+        # logger=pl.loggers.CSVLogger("."),
+        logger= wandb_logger,
         # logger=pl.loggers.TensorBoardLogger("lightning_logs", name="soundstream"),
         callbacks=[
-            pl.callbacks.ModelCheckpoint(save_last=True, every_n_train_steps=50000),
+            pl.callbacks.ModelCheckpoint(
+                dirpath='/content/drive/MyDrive/soundstream_pytorch/', 
+                every_n_train_steps=1000,
+            ),
             KMeanCodebookInitCallback(),
         ],
     )
