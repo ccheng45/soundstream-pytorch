@@ -57,7 +57,6 @@ class ResidualVectorQuantizer(nn.Module):
         logger.debug("r %s", r.shape)
         logger.debug("input %s", input.shape)
         with torch.no_grad():
-
             for i in range(n):
                 w = self.weight[i]
                 # r: [..., num_embeddings]
@@ -131,7 +130,7 @@ class ResidualVectorQuantizer(nn.Module):
                 w /= torch.sum(w)
                 self.running_mean[i, mask] = w.type_as(self.running_mean) @ self.running_mean[i]
                 self.code_count[i, mask] = w.type_as(self.code_count) @ self.code_count[i]
-
+        
         return num_replaced
 
     @torch.no_grad()
