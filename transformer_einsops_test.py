@@ -1,5 +1,5 @@
 import torch
-from transformer_einsops import SimpleAttentionEins, MultiHeadSelfAttentionEnins
+from transformer_einsops import SimpleAttentionEins, MultiHeadSelfAttentionEins
 
 def test_simple():
     model = SimpleAttentionEins(dim=256)
@@ -8,7 +8,7 @@ def test_simple():
     print("Output shape: ", output.shape)
 
 def test_multihead():
-    model = MultiHeadSelfAttentionEnins(dim=256)
+    model = MultiHeadSelfAttentionEins(dim=256)
     x = torch.rand(7, 50, 256)
     output = model(x)
     print("Output shape: ", output.shape)
