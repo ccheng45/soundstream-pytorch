@@ -24,4 +24,6 @@ input = torch.rand(1000, 64 , 512) # batch, len, d
 quantized, codes, commit_loss = rvq(input)
 print("quantized", quantized.shape)
 print("code", codes.shape)
+for i in range(4):
+    print(codes[1,1,i].item())
 print("commit_loss", commit_loss.shape, commit_loss.item())
